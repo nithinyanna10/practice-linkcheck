@@ -94,6 +94,13 @@ def test_non_http_redirect_target() -> None:
     assert result.chain == [A] and result.problem == "error"
 
 
+@pytest.mark.parametrize("location", ["http://[::1/", "http://[/"])
+def test_malformed_location_is_error(location: str) -> None:
+    client, _ = make_client({A: redirect(location)})
+    result = follow_chain(A, client)
+    assert result.chain == [A] and result.problem == "error"
+
+
 def test_per_hop_timeout_is_5s() -> None:
     timeouts: list[dict] = []
 
@@ -101,7 +108,8 @@ def test_per_hop_timeout_is_5s() -> None:
         timeouts.append(request.extensions["timeout"])
         return httpx.Response(200)
 
-    client = httpx.Client(transport=httpx.MockTransport(handler))
+    # client default differs from 5.0, so this only passes if follow_chain sets it per request
+    client = httpx.Client(transport=httpx.MockTransport(handler), timeout=30)
     follow_chain(A, client)
     assert timeouts[0]["read"] == 5.0 and timeouts[0]["connect"] == 5.0
 

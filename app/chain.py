@@ -53,5 +53,5 @@ def follow_chain(url: str, client: httpx.Client) -> ChainResult:
                 return ChainResult(chain, "loop")
     except httpx.TimeoutException:
         return ChainResult(chain, "timeout")
-    except httpx.HTTPError:
+    except (httpx.HTTPError, httpx.InvalidURL, ValueError):  # ValueError: urljoin/urlsplit on a malformed Location
         return ChainResult(chain, "error")
