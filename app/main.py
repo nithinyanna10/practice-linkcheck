@@ -14,7 +14,8 @@ app = FastAPI()
 
 def get_client() -> Iterator[httpx.Client]:
     # follow_redirects must stay False: follow_chain checks every hop itself.
-    with httpx.Client(follow_redirects=False) as client:
+    # trust_env=False: ignore ambient proxy/netrc config when fetching attacker-chosen URLs.
+    with httpx.Client(follow_redirects=False, trust_env=False) as client:
         yield client
 
 
@@ -24,6 +25,7 @@ class CheckRequest(BaseModel):
     @field_validator("url")
     @classmethod
     def _http_url_with_host(cls, value: str) -> str:
+        value = value.strip()  # the SSRF check and the fetch must see the same string
         try:
             parts = urlsplit(value)
             valid = parts.scheme in ("http", "https") and bool(parts.hostname)

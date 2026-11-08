@@ -103,6 +103,19 @@ def test_invalid_urls_422(api: TestClient, serve: Callable[[Handler], None], req
     assert requested == []
 
 
+@pytest.mark.parametrize("url", [" https://example.com ", "https://example.com\n"])
+def test_surrounding_whitespace_is_stripped(api: TestClient, serve: Callable[[Handler], None], url: str) -> None:
+    serve(_ok)
+    response = api.post("/links/check", json={"url": url})
+    assert response.status_code == 200
+    assert response.json()["verdict"] == "safe"
+    assert response.json()["chain"] == ["https://example.com"]
+
+
+def test_whitespace_only_422(api: TestClient) -> None:
+    assert api.post("/links/check", json={"url": "   "}).status_code == 422
+
+
 def test_missing_url_422(api: TestClient) -> None:
     assert api.post("/links/check", json={}).status_code == 422
 
@@ -152,6 +165,7 @@ def test_real_client_does_not_follow_redirects() -> None:
     client = next(dependency)
     try:
         assert client.follow_redirects is False
+        assert client.trust_env is False  # no ambient proxy/netrc for attacker-chosen URLs
     finally:
         dependency.close()
     assert client.is_closed
