@@ -35,6 +35,15 @@ def test_free_hosting(suffix: str) -> None:
     assert f"final domain is on free hosting ({host})" in reasons
 
 
+def test_trailing_dot_free_hosting_flagged() -> None:
+    reasons = evaluate(["https://a.com", "https://evil.workers.dev."], None)
+    assert "final domain is on free hosting (evil.workers.dev)" in reasons
+
+
+def test_trailing_dot_is_same_domain() -> None:
+    assert evaluate(["https://a.com", "https://a.com."], None) == []
+
+
 def test_free_hosting_suffix_must_match_on_label_boundary() -> None:
     reasons = evaluate(["https://a.com", "https://notworkers.dev"], None)
     assert not any("free hosting" in r for r in reasons)

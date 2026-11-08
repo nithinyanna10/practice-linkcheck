@@ -17,7 +17,7 @@ _LOOKALIKES = (str.maketrans("0135", "oles"), str.maketrans("0135", "oies"))
 
 def _host(url: str) -> str:
     # shortcut: no public-suffix list, so a.example.com vs b.example.com counts as different, upgrade to tldextract if that's too noisy.
-    host = (urlsplit(url).hostname or "").lower()
+    host = (urlsplit(url).hostname or "").lower().rstrip(".")
     return host.removeprefix("www.")
 
 
