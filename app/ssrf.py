@@ -15,9 +15,17 @@ def _addresses(host: str) -> list[IPAddress]:
     return [ipaddress.ip_address(info[4][0]) for info in infos]
 
 
+_NAT64 = ipaddress.ip_network("64:ff9b::/96")
+_V4_COMPATIBLE = ipaddress.ip_network("::/96")
+
+
 def _ip_blocked(ip: IPAddress) -> bool:
-    if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped is not None:
-        ip = ip.ipv4_mapped
+    if isinstance(ip, ipaddress.IPv6Address):
+        if ip.ipv4_mapped is not None:
+            ip = ip.ipv4_mapped
+        elif ip in _NAT64 or ip in _V4_COMPATIBLE:
+            # Embedded IPv4 (NAT64 or deprecated v4-compatible): judge the IPv4 address it reaches.
+            ip = ipaddress.IPv4Address(int(ip) & 0xFFFFFFFF)
     return not ip.is_global or ip.is_multicast
 
 
