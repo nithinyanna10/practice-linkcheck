@@ -34,6 +34,23 @@ def hops(n: int, end: httpx.Response | None) -> dict[str, httpx.Response | Excep
     return routes
 
 
+def test_client_that_follows_redirects_is_not_trusted() -> None:
+    # Even a follow_redirects=True client must not bypass the per-hop SSRF check.
+    seen: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(str(request.url))
+        if request.url.host == "a.com":
+            return redirect("http://169.254.169.254/")
+        return httpx.Response(200)
+
+    client = httpx.Client(transport=httpx.MockTransport(handler), follow_redirects=True)
+    result = follow_chain(A, client)
+    assert result.problem == "blocked"
+    assert result.chain == [A]
+    assert seen == [A]
+
+
 def test_no_redirect() -> None:
     client, _ = make_client({A: httpx.Response(200)})
     result = follow_chain(A, client)

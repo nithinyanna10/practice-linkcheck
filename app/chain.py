@@ -19,7 +19,7 @@ class ChainResult:
 def _probe(url: str, client: httpx.Client) -> str | None:
     """Return the redirect target of url, or None. Reads status and headers only, never the body."""
     # GET, not HEAD: phishing sites cloak against HEAD.
-    with client.stream("GET", url, timeout=HOP_TIMEOUT) as response:
+    with client.stream("GET", url, timeout=HOP_TIMEOUT, follow_redirects=False) as response:
         location = response.headers.get("location")
         if response.status_code in REDIRECT_STATUSES and location:
             return urljoin(url, location)
