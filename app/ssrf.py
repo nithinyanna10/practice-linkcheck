@@ -23,10 +23,10 @@ def _ip_blocked(ip: IPAddress) -> bool:
 
 def is_blocked(url: str) -> bool:
     """True if the URL has no host or any address it points at is non-public (fail closed)."""
-    host = urlsplit(url).hostname
-    if not host:
-        return True
     try:
+        host = urlsplit(url).hostname
+        if not host:
+            return True
         return any(_ip_blocked(ip) for ip in _addresses(host))
     except (socket.gaierror, ValueError):
         return True

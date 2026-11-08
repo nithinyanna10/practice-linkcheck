@@ -65,3 +65,7 @@ def test_public_hostname_allowed() -> None:
 
 def test_no_hostname_blocked() -> None:
     assert is_blocked("http://") is True
+
+
+def test_malformed_url_blocked() -> None:
+    assert is_blocked("http://[::1/") is True
