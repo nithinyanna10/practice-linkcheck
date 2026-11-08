@@ -36,6 +36,13 @@ def _rejection(target: str) -> str | None:
 
 
 def follow_chain(url: str, client: httpx.Client) -> ChainResult:
+    # TODO(timeout): HOP_TIMEOUT is an httpx per-operation timeout (connect/read/write/pool), not a
+    # wall-clock limit per hop, and DNS lookups (here via is_blocked, and inside httpx) have no timeout.
+    # A hostile server that sends one byte every <5s, or a slow DNS server, can hold a request thread
+    # for a very long time; ~40 such URLs exhaust Starlette's threadpool and stall the whole service.
+    # Fix: async httpx.AsyncClient + async endpoint + asyncio.timeout(HOP_TIMEOUT) around each hop,
+    # with the is_blocked DNS lookup inside the same deadline, and a test with a stalling stream.
+    # Until then, do not expose this service to untrusted traffic.
     chain = [url]
     try:
         while True:
